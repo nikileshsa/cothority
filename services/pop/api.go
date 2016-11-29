@@ -4,7 +4,7 @@ import (
 	"errors"
 	"crypto/sha512"
 
-	_ "github.com/dedis/cothority/log"
+	"github.com/dedis/cothority/log"
 	"github.com/dedis/cothority/network"
 	"github.com/dedis/cothority/sda"
 	_ "github.com/dedis/crypto/abstract"
@@ -34,6 +34,7 @@ func (c *Client) SendConfigFileHash(r *sda.Roster, data network.Body) (bool, err
 		hash_config := sha512.New()
 		hash_config.Write(config)
 		hash_config_buff := hash_config.Sum(nil)
+		log.Lvl1("Hash sum value ",hash_config_buff)
 		r, err := c.Send(dst, &HashConfigurationFile{
 				Value: hash_config_buff,
 			})

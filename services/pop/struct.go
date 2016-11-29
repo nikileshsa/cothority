@@ -43,8 +43,8 @@ type HashConfigurationFile struct{
 }
 
 type ConfigurationFile struct{
-	//OrganizersPublic []abstract.Point //List of organizers public keys, NOT SURE IF THIS WILL WORK FINE FROM THE FIRST TIME
-	Data []byte
+	OrganizersPublic []abstract.Point //List of organizers public keys, NOT SURE IF THIS WILL WORK FINE FROM THE FIRST TIME
+	//Data []byte
 	/*StartingTime float64 //Starting time of party
 	EndingTime float64 //Ending time of party
 	Duration float64 //Duration of the party

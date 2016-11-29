@@ -37,7 +37,7 @@ type Service struct {
 //HashConfigurationFile: hashes the configuration file and stores it in the service
 //The hash is stored in s.hash_digest.Value of type HashConfigurationFile
 func (s *Service) HashConfigurationFile(e *network.ServerIdentity, req *HashConfigurationFile) (network.Body, error) {
-	//log.Lvl1("HashConfigurationFile")
+	log.Lvl1("Hash sum value received",req.Value)
 	s.hash_digest.Value = req.Value
 	reply := &SendHashConfigFileResponse{s.hash_digest.Value}
 	return reply, nil

@@ -4,8 +4,8 @@ import (
 	"testing"
 	"github.com/dedis/cothority/log"
 	"github.com/dedis/cothority/sda"
-	_ "github.com/dedis/cothority/network"
-	_ "github.com/dedis/crypto/abstract"
+	"github.com/dedis/cothority/network"
+	"github.com/dedis/crypto/abstract"
 
 )
 
@@ -18,15 +18,16 @@ func NewTestClient(lt *sda.LocalTest) *Client {
 }
 
 func setupConfigFile() *ConfigurationFile{
-/*	rand := network.Suite.Cipher([]byte("example"))
+	rand := network.Suite.Cipher([]byte("example"))
 
 	X := make([]abstract.Point, 3)
 	for i := range X { // pick random points
 		x := network.Suite.Scalar().Pick(rand) // create a private key x
     	X[i] = network.Suite.Point().Mul(nil, x)
-	}*/
+	}
 	return &ConfigurationFile{
-		Data: []byte{1,2,3,4,5},
+		OrganizersPublic : X,
+		//Data: []byte{1,2,3,4,5},
 	}
 }
 
@@ -41,7 +42,7 @@ func TestServiceTemplate(t *testing.T) {
 	client := NewTestClient(local)
 	log.Lvl1("Sending request to service...")
 	config := setupConfigFile()
-	log.Lvl1("El valor de config file  ", config)
+	log.Lvl1("Config file  ", config)
 	hash_value, err := client.SendConfigFileHash(el,config)
 	log.ErrFatal(err, "Couldn't send")
 	log.Lvl1("Config File was hashed with ",hash_value)
