@@ -5,7 +5,7 @@ This holds the messages used to communicate with the service over the network.
 */
 
 import (
-	
+	"time"
 	"github.com/dedis/crypto/abstract"
 	"github.com/dedis/cothority/network"
 )
@@ -14,55 +14,42 @@ import (
 func init() {
 	for _, msg := range []interface{}{
 		FinalStatement{}, HashConfigurationFile{},SendHashConfigFileResponse{},
-		ConfigurationFile{}, CountRequest{}, CountResponse{},
+		ConfigurationFile{},CheckHashConfigurationFile{},SendCheckHashConfigFileResponse{},
 	} {
 		network.RegisterPacketType(msg)
 	}
 }
 
+type ConfigurationFile struct{
+	OrganizersPublic []abstract.Point //List of organizers public keys
+	StartingTime float64 //Starting time of party not sure if better use duration
+	EndingTime float64 //End time of the party
+	Duration float64 //Measured in hours and minutes
+	Context []byte //Scope, what the token will be used for
+	Date time.Time
+}
 
 type FinalStatement struct{
 	AttendeesPublic []abstract.Point //The set of public keys
 	//Config *ConfigurationFile //Configuration file obtained at the party
-	Party_ID HashConfigurationFile //
+	Party_ID HashConfigurationFile
+	RealStartingTime float64
+	RealEndingTime float64
+	//Not sure how to put the observers video Files
 }
 
+type CheckHashConfigurationFile struct{
+	Check_Value []byte
+}
 
 type HashConfigurationFile struct{
 	Value []byte
-	//OrganizersPublic []abstract.Point //List of organizers public keys, NOT SURE IF THIS WILL WORK FINE FROM THE FIRST TIME
-	//OrganizersPublic []byte
-	/*StartingTime float64 //Starting time of party
-	EndingTime float64 //Ending time of party
-	Duration float64 //Duration of the party
-	Use string
-	ExpirationTime float64 //Nof sure if other type os better
-	//Also need to store the server data, maybe a network body variable is enough
-	//Agregar el marshalled value
-	*/
 }
 
-type ConfigurationFile struct{
-	OrganizersPublic []abstract.Point //List of organizers public keys, NOT SURE IF THIS WILL WORK FINE FROM THE FIRST TIME
-	//Data []byte
-	/*StartingTime float64 //Starting time of party
-	EndingTime float64 //Ending time of party
-	Duration float64 //Duration of the party
-	Use string
-	ExpirationTime float64 //Nof sure if other type os better
-	//Also need to store the server data, maybe a network body variable is enough
-	//Agregar el marshalled value
-	*/
+type SendCheckHashConfigFileResponse struct {
+	Success bool
 }
+
 type SendHashConfigFileResponse struct {
-	answer []byte
-}
-
-// CountRequest will return how many times the protocol has been run.
-type CountRequest struct {
-}
-
-// CountResponse returns the number of protocol-runs
-type CountResponse struct {
-	Count int
+	Answer []byte
 }

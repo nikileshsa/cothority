@@ -22,14 +22,15 @@ func NewClient() *Client {
 	return &Client{Client: sda.NewClient(ServiceName)}
 }
 
-//Send the configuration file of the party, with PoPConfigFile
-func (c *Client) SendConfigFileHash(r *sda.Roster, data network.Body) (bool, error){
+//Send the configuration file of the party, it gets hashed, the output is the hashed value
+//this hashed value is also stored in the server
+func (c *Client) SendConfigFileHash(dst *network.ServerIdentity, data network.Body) ([]byte, error){
 	//Change so that the Number of Organizers might in data
-	dst := r.RandomServerIdentity()
+	//dst := r.RandomServerIdentity()
 	if data != nil {
 		config, err := network.MarshalRegisteredType(data)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 		hash_config := sha512.New()
 		hash_config.Write(config)
@@ -38,30 +39,17 @@ func (c *Client) SendConfigFileHash(r *sda.Roster, data network.Body) (bool, err
 		r, err := c.Send(dst, &HashConfigurationFile{
 				Value: hash_config_buff,
 			})
-		_ = r
 		if err != nil {
-			return false, err
+			return nil, err
 		}
+		replyVal := r.Msg.(SendHashConfigFileResponse)
+		log.Lvl1("The hash value replied is ",replyVal.Answer)
+		return replyVal.Answer, nil
+	}else{
+		return nil, errors.New("Empty Configuration File")
 	}
-	//replyVal := r.Msg.(SendConfigFileResponse)
-	//reply = &replyVal
-	return true, nil
 }
 
-
-func (c *Client) Count(r *sda.Roster) (int, error) {
-	si := r.RandomServerIdentity()
-	reply, err := c.Send(si, &CountRequest{})
-	if e := network.ErrMsg(reply, err); e != nil {
-		return -1, e
-	}
-	cr, ok := reply.Msg.(CountResponse)
-	if !ok {
-		return -1, errors.New("Wrong return-type.")
-	}
-	return cr.Count, nil
-}
-//Necesito pegarlo a un servidor
 
 //Start_Signature returns
 /*
@@ -69,10 +57,41 @@ Starts a collective signature round. It is expected that each conode signs a pub
 Recibe? Statement to be signed, that is the public key
 Regresa? The aggregate commit of the signed key
 */
-//func (c *Client) Start_signature(in io.Reader) (error){
-//Receives the message that is going to be signed
-//Function needs to check that the file that is going to be signed is actually party related
-//}
+/*Start_signature_ConFigFile signs the configuration file
+/Steps:
+1. Receives configuraiton file
+2. Checks that it is valid (with the hash stored previously)
+3. If the file is valid, then the file is signed
+4. Returns error if the file has not valid
+*/
+
+func (c *Client) Start_signature_ConFigFile(dst *network.ServerIdentity, data network.Body) (error){
+	if data != nil {
+			config, err := network.MarshalRegisteredType(data)
+			if err != nil {
+				return nil, err
+			}
+			hash_config := sha512.New()
+			hash_config.Write(config)
+			hash_config_buff := hash_config.Sum(nil)
+			//The value to check
+			r, err := c.Send(dst, &CheckHashConfigurationFile{
+					Check_Value: hash_config_buff,
+				})
+			if err != nil {
+				return nil, err
+			}
+			replyVal := r.Msg.(SendCheckHashConfigFileResponse)
+			log.Lvl1("Success ",replyVal.Success)
+			if replyVal.Sucess == false{
+				return nil, errors.New("Configuration file is incorrect")
+			}
+			//If configuration file is correct, start the signing process
+			//How do I start a cosi round?
+		}else{
+			return nil, errors.New("Empty Configuration File")
+		}
+}
 
 /*
 Organizers send statements containing public keys and party configuration information.

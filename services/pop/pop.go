@@ -7,7 +7,6 @@ runs on the node.
 
 import (
 	_ "time"
-
 	"github.com/dedis/cothority/log"
 	"github.com/dedis/cothority/network"
 	"github.com/dedis/cothority/sda"
@@ -39,14 +38,33 @@ type Service struct {
 func (s *Service) HashConfigurationFile(e *network.ServerIdentity, req *HashConfigurationFile) (network.Body, error) {
 	log.Lvl1("Hash sum value received",req.Value)
 	s.hash_digest.Value = req.Value
-	reply := &SendHashConfigFileResponse{s.hash_digest.Value}
-	return reply, nil
+	return &SendHashConfigFileResponse{Answer: s.hash_digest.Value,}, nil
 }
 
-//Previous testing of CountRequest
-func (s *Service) CountRequest(e *network.ServerIdentity, req *CountRequest) (network.Body, error) {
-	return &CountResponse{s.Count}, nil
+//CheckHashConfigurationFile: Verifies that the Hash of the configuration file to be signed is correct
+//If it is correct, returns true, else false
+func (s *Service) CheckHashConfigurationFile(e *network.ServerIdentity, req *HashConfigurationFile) (network.Body, error) {
+	log.Lvl1("Hash sum value received",req.CheckHashConfigurationFile)
+	reply := false
+	if req.CheckHashConfigurationFile == s.hash_digest.Value {
+		reply = true
+	}
+	return &SendCheckHashConfigFileResponse{Success: reply,}, nil
 }
+
+/*StartCoSi: starts the collective signature of a file
+Useful for ConfigurationFile and FinalStatement
+*/
+func (s *Service) StartCoSi(e *network.ServerIdentity, req *HashConfigurationFile) (network.Body, error) {
+	log.Lvl1("Hash sum value received",req.CheckHashConfigurationFile)
+	reply := false
+	if req.CheckHashConfigurationFile == s.hash_digest.Value {
+		reply = true
+	}
+	return &SendCheckHashConfigFileResponse{Success: reply,}, nil
+}
+
+
 
 // NewProtocol is called on all nodes of a Tree (except the root, since it is
 // the one starting the protocol) so it's the Service that will be called to
@@ -68,7 +86,7 @@ func newService(c *sda.Context, path string) sda.Service {
 		ServiceProcessor: sda.NewServiceProcessor(c),
 		path:             path,
 	}
-	if err := s.RegisterMessages(s.HashConfigurationFile, s.CountRequest); err != nil {
+	if err := s.RegisterMessages(s.HashConfigurationFile); err != nil {
 		log.ErrFatal(err, "Couldn't register messages")
 	}
 	return s
