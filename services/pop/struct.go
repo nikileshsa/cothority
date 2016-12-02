@@ -8,16 +8,31 @@ import (
 	"time"
 	"github.com/dedis/crypto/abstract"
 	"github.com/dedis/cothority/network"
+	"github.com/dedis/cothority/sda"
 )
 
 // Register messages, for network to handle them.
 func init() {
 	for _, msg := range []interface{}{
-		FinalStatement{}, HashConfigurationFile{},SendHashConfigFileResponse{},
+		FinalStatement{}, 
+		HashConfigurationFile{},SendHashConfigFileResponse{},
 		ConfigurationFile{},CheckHashConfigurationFile{},SendCheckHashConfigFileResponse{},
+		SignatureResponseConfig{},
 	} {
 		network.RegisterPacketType(msg)
 	}
+}
+
+// SignatureRequest is what the Cosi service is expected to receive from clients.
+type SignatureRequestConfig struct {
+	Message []byte
+	Roster  *sda.Roster	//The set of servers that will be used to start the collective signature protocol
+}
+
+// SignatureResponse is what the Cosi service will reply to clients.
+type SignatureResponseConfig struct {
+	Sum       []byte
+	Signature []byte
 }
 
 type ConfigurationFile struct{
@@ -39,11 +54,11 @@ type FinalStatement struct{
 }
 
 type CheckHashConfigurationFile struct{
-	Check_Value []byte
+	Sum []byte
 }
 
 type HashConfigurationFile struct{
-	Value []byte
+	Sum []byte
 }
 
 type SendCheckHashConfigFileResponse struct {

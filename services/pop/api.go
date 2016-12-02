@@ -24,9 +24,9 @@ func NewClient() *Client {
 
 //Send the configuration file of the party, it gets hashed, the output is the hashed value
 //this hashed value is also stored in the server
-func (c *Client) SendConfigFileHash(dst *network.ServerIdentity, data network.Body) ([]byte, error){
+func (c *Client) SendConfigFileHash(r *sda.Roster, data network.Body) ([]byte, error){
 	//Change so that the Number of Organizers might in data
-	//dst := r.RandomServerIdentity()
+	dst := r.List[0]
 	if data != nil {
 		config, err := network.MarshalRegisteredType(data)
 		if err != nil {
@@ -37,7 +37,7 @@ func (c *Client) SendConfigFileHash(dst *network.ServerIdentity, data network.Bo
 		hash_config_buff := hash_config.Sum(nil)
 		log.Lvl1("Hash sum value ",hash_config_buff)
 		r, err := c.Send(dst, &HashConfigurationFile{
-				Value: hash_config_buff,
+				Sum: hash_config_buff,
 			})
 		if err != nil {
 			return nil, err
@@ -65,32 +65,41 @@ Regresa? The aggregate commit of the signed key
 4. Returns error if the file has not valid
 */
 
-func (c *Client) Start_signature_ConFigFile(dst *network.ServerIdentity, data network.Body) (error){
-	if data != nil {
-			config, err := network.MarshalRegisteredType(data)
+func (c *Client) Start_signature_ConFigFile(r *sda.Roster, msg_config []byte) (error){
+	dst := r.List[0]
+	if msg_config != nil {
+		/*	config, err := network.MarshalRegisteredType(data)
 			if err != nil {
-				return nil, err
-			}
+				return err
+			}*/
 			hash_config := sha512.New()
-			hash_config.Write(config)
+			hash_config.Write(msg_config)
 			hash_config_buff := hash_config.Sum(nil)
 			//The value to check
-			r, err := c.Send(dst, &CheckHashConfigurationFile{
-					Check_Value: hash_config_buff,
+			reply, err := c.Send(dst, &CheckHashConfigurationFile{
+					Sum: hash_config_buff,
 				})
 			if err != nil {
-				return nil, err
+				return  err
 			}
-			replyVal := r.Msg.(SendCheckHashConfigFileResponse)
+			replyVal := reply.Msg.(SendCheckHashConfigFileResponse)
 			log.Lvl1("Success ",replyVal.Success)
-			if replyVal.Sucess == false{
-				return nil, errors.New("Configuration file is incorrect")
+			if replyVal.Success == false{
+				return  errors.New("Configuration file is incorrect")
 			}
 			//If configuration file is correct, start the signing process
-			//How do I start a cosi round?
-		}else{
-			return nil, errors.New("Empty Configuration File")
-		}
+			r_sign, err := c.Send(dst,&SignatureRequestConfig{
+					Message: msg_config,
+					Roster: r,
+			})
+			if (err != nil){
+				return errors.New("Error during the sending process")
+			}else{
+				return nil
+			}
+	}else{
+		return errors.New("Empty Configuration File")
+	}
 }
 
 /*
