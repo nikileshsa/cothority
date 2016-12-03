@@ -5,7 +5,7 @@ import (
 	"crypto/sha512"
 
 	"github.com/dedis/cothority/log"
-	"github.com/dedis/cothority/network"
+	_ "github.com/dedis/cothority/network"
 	"github.com/dedis/cothority/sda"
 	_ "github.com/dedis/crypto/abstract"
 	_ "github.com/dedis/crypto/anon"
@@ -24,16 +24,18 @@ func NewClient() *Client {
 
 //Send the configuration file of the party, it gets hashed, the output is the hashed value
 //this hashed value is also stored in the server
-func (c *Client) SendConfigFileHash(r *sda.Roster, data network.Body) ([]byte, error){
+//func (c *Client) SendConfigFileHash(r *sda.Roster, data network.Body) ([]byte, error){
+func (c *Client) SendConfigFileHash(r *sda.Roster, msg_config []byte) ([]byte, error){
 	//Change so that the Number of Organizers might in data
 	dst := r.List[0]
-	if data != nil {
-		config, err := network.MarshalRegisteredType(data)
+	//if data != nil {
+	if msg_config != nil {
+	/*	msg_config, err := network.MarshalRegisteredType(data)
 		if err != nil {
 			return nil, err
-		}
+		}*/
 		hash_config := sha512.New()
-		hash_config.Write(config)
+		hash_config.Write(msg_config)
 		hash_config_buff := hash_config.Sum(nil)
 		log.Lvl1("Hash sum value ",hash_config_buff)
 		r, err := c.Send(dst, &HashConfigurationFile{
@@ -64,8 +66,8 @@ Regresa? The aggregate commit of the signed key
 3. If the file is valid, then the file is signed
 4. Returns error if the file has not valid
 */
-
-func (c *Client) Start_signature_ConFigFile(r *sda.Roster, msg_config []byte) (error){
+//SignatureResponseConfig
+func (c *Client) Start_signature_ConFigFile(r *sda.Roster, msg_config []byte) (*SignatureResponseConfig, error){
 	dst := r.List[0]
 	if msg_config != nil {
 		/*	config, err := network.MarshalRegisteredType(data)
@@ -80,12 +82,12 @@ func (c *Client) Start_signature_ConFigFile(r *sda.Roster, msg_config []byte) (e
 					Sum: hash_config_buff,
 				})
 			if err != nil {
-				return  err
+				return  nil,err
 			}
 			replyVal := reply.Msg.(SendCheckHashConfigFileResponse)
 			log.Lvl1("Success ",replyVal.Success)
 			if replyVal.Success == false{
-				return  errors.New("Configuration file is incorrect")
+				return  nil,errors.New("Configuration file is incorrect")
 			}
 			//If configuration file is correct, start the signing process
 			r_sign, err := c.Send(dst,&SignatureRequestConfig{
@@ -93,12 +95,15 @@ func (c *Client) Start_signature_ConFigFile(r *sda.Roster, msg_config []byte) (e
 					Roster: r,
 			})
 			if (err != nil){
-				return errors.New("Error during the sending process")
-			}else{
-				return nil
+				return nil,errors.New("Error during the sending process")
 			}
+			signature_resp, ok := r_sign.Msg.(SignatureResponseConfig)
+			if !ok {
+				return nil, errors.New("this is odd: couldn't cast reply")
+			}
+			return &signature_resp, nil
 	}else{
-		return errors.New("Empty Configuration File")
+		return nil,errors.New("Empty Configuration File")
 	}
 }
 

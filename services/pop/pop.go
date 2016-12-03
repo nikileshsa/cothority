@@ -52,9 +52,12 @@ func (s *Service) CheckHashConfigurationFile(e *network.ServerIdentity, req *Che
 	reply := false
 	if 	bytes.Equal(req.Sum,s.ConfigHash.Sum){
 		reply = true
+		log.Lvl1("The hash sum's are the same")
 	}
+	fmt.Println("CheckHashConfigurationFile salio bien")
 	return &SendCheckHashConfigFileResponse{Success: reply,}, nil
 }
+
 
 /*SignatureRequestConfig: starts the collective signature of a file
 Useful for ConfigurationFile
@@ -62,40 +65,40 @@ Useful for ConfigurationFile
 func (s *Service) SignatureRequestConfig(e *network.ServerIdentity, req *SignatureRequestConfig) (network.Body, error) {
 	log.Lvl1("Request collective signature for configuration file",req.Message)
 	tree := req.Roster.GenerateBinaryTree() //Generates the tree formed by conode servers
-	tni := s.NewTreeNodeInstance(tree, tree.Root, protocol.Name)
-	pi, err := cosi.NewCosi(tni) //called from 	"github.com/dedis/cothority/protocols/cosi"
-	if err != nill{
-		return nil, errors.New("Error in creating CoSi protocol " + err.Error)
+	tni := s.NewTreeNodeInstance(tree, tree.Root, cosi.Name)
+	pi, err := cosi.NewProtocol(tni) //called from 	"github.com/dedis/cothority/protocols/cosi"
+	fmt.Println("Ya instancio el protocolo")
+	if err != nil{
+		return nil, errors.New("Error in creating CoSi protocol ")
 	}
 	s.RegisterProtocolInstance(pi)
+	fmt.Println("Registra el protocolo")
 	pcosi := pi.(*cosi.CoSi)
 	pcosi.SigningMessage(req.Message)
-	h, err := crypto.HashBytes(network.Suite.Hash(), req.Message) //Calculate message hash
+	fmt.Println("Signing Message")
+	hash_sum, err := crypto.HashBytes(network.Suite.Hash(), req.Message) //Calculate message hash
+	fmt.Println("Crypto hash")
 	if err != nil {
-
-		return nil, errors.New("Error hashing the message "+ err.Error)
+		return nil, errors.New("Error hashing the message ")
 	}
 	response := make (chan []byte)
-	pcosi.RegisterSignatureHook(func (sig []byte){
+	fmt.Println("Creating channel")
+	pcosi.RegisterSignatureHook(func(sig []byte) {
 		response <- sig
 	})
+	fmt.Println("Register Signature Hook")
 	log.Lvl3("CoSi Service starting up root protocol")
-	go pi.Dispatch() //Handle messages from channels
-	go pi.Start() //Start protocol
+	go pi.Dispatch()
+	go pi.Start()
+	sig := <-response
+	if log.DebugVisible() > 1 {
+		fmt.Printf("%s: Signed a message.\n")
+	}
+	fmt.Println("Sig is asigned repsonse")
 	fmt.Println("The signature is:")
 	fmt.Println(sig)
-	return &SignatureResponseConfig{Sum: reply, Signature: sig,}, nil
+	return &SignatureResponseConfig{Sum: hash_sum, Signature: sig,}, nil
 }
-
-
-/*
-type SignatureResponseConfig struct {
-	Sum       []byte
-	Signature []byte
-}
-
-*/
-
 
 // NewProtocol is called on all nodes of a Tree (except the root, since it is
 // the one starting the protocol) so it's the Service that will be called to
@@ -105,8 +108,11 @@ type SignatureResponseConfig struct {
 // instantiation of the protocol, use CreateProtocolService, and you can
 // give some extra-configuration to your protocol in here.
 func (s *Service) NewProtocol(tn *sda.TreeNodeInstance, conf *sda.GenericConfig) (sda.ProtocolInstance, error) {
-	log.Lvl3("Not templated yet")
-	return nil, nil
+	fmt.Println("Entre a New Protocol")
+	log.Lvl3("Cosi Service received New Protocol event")
+	pi, err := cosi.NewProtocol(tn)
+	go pi.Dispatch()
+	return pi, err
 }
 
 // newTemplate receives the context and a path where it can write its
@@ -117,7 +123,7 @@ func newService(c *sda.Context, path string) sda.Service {
 		ServiceProcessor: sda.NewServiceProcessor(c),
 		path:             path,
 	}
-	if err := s.RegisterMessages(s.HashConfigurationFile,s.CheckHashConfigurationFile, s.StartSignatureRequestConfigCoSi); err != nil {
+	if err := s.RegisterMessages(s.HashConfigurationFile,s.CheckHashConfigurationFile, s.SignatureRequestConfig); err != nil {
 		log.ErrFatal(err, "Couldn't register messages")
 	}
 	return s
