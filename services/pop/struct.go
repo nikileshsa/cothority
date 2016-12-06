@@ -15,9 +15,10 @@ import (
 func init() {
 	for _, msg := range []interface{}{
 		FinalStatement{}, 
-		HashConfigurationFile{},SendHashConfigFileResponse{},
-		ConfigurationFile{},CheckHashConfigurationFile{},SendCheckHashConfigFileResponse{},
-		SignatureResponseConfig{},
+		HashConfigurationFile{},HashConfigFileResponse{},
+		ConfigurationFile{},CheckHashConfigurationFile{},CheckHashConfigFileResponse{},
+		SignatureResponseConfig{},CheckHashFinalStatement{},HashFinalStatement{},CheckHashFinalStatementResponse{},
+		HashFinalStatementResponse{},VerificationStatement{},VerificationStatementResponse{}
 	} {
 		network.RegisterPacketType(msg)
 	}
@@ -53,6 +54,34 @@ type FinalStatement struct{
 	//Not sure how to put the observers video Files
 }
 
+type VerificationStatement struct{
+	final_msg []byte
+	Roster  *sda.Roster	//The set of servers that will be used to start the collective signature protocol
+	Signature []byte
+	ConodesPublic []abstract.Point
+}
+
+type VerificationStatementResponse struct{
+	Success bool
+}
+//FinalStatement File
+type CheckHashFinalStatement struct{
+	Sum []byte
+}
+
+type HashFinalStatement struct{
+	Sum []byte
+}
+
+type CheckHashFinalStatementResponse struct {
+	Success bool
+}
+
+type HashFinalStatementResponse struct {
+	Answer []byte
+}
+
+//Configuration File
 type CheckHashConfigurationFile struct{
 	Sum []byte
 }
@@ -61,10 +90,10 @@ type HashConfigurationFile struct{
 	Sum []byte
 }
 
-type SendCheckHashConfigFileResponse struct {
+type CheckHashConfigFileResponse struct {
 	Success bool
 }
 
-type SendHashConfigFileResponse struct {
+type HashConfigFileResponse struct {
 	Answer []byte
 }

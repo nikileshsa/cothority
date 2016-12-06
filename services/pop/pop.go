@@ -15,6 +15,9 @@ import (
 	"github.com/dedis/cothority/sda"
 	"github.com/dedis/cothority/crypto"
 	"github.com/dedis/cothority/protocols/cosi"
+	"github.com/dedis/crypto/abstract"
+	crypto_cosi "github.com/dedis/crypto/cosi"
+
 )
 
 // ServiceName is the name to refer to the Template service from another
@@ -35,6 +38,10 @@ type Service struct {
 	PoPConfig ConfigurationFile
 	Count int
 	ConfigHash HashConfigurationFile
+	FinalHash  HashFinalStatement
+	ConfigSig SignatureResponseConfig //Signature of the configuration file
+	AttendeesPublic []abstract.Point //The set of public keys
+
 }
 
 //HashConfigurationFile: hashes the configuration file and stores it in the service
@@ -42,7 +49,7 @@ type Service struct {
 func (s *Service) HashConfigurationFile(e *network.ServerIdentity, req *HashConfigurationFile) (network.Body, error) {
 	log.Lvl1("Hash sum value received",req.Sum)
 	s.ConfigHash.Sum = req.Sum
-	return &SendHashConfigFileResponse{Answer: s.ConfigHash.Sum,}, nil
+	return &HashConfigFileResponse{Answer: s.ConfigHash.Sum,}, nil
 }
 
 //CheckHashConfigurationFile: Verifies that the Hash of the configuration file to be signed is correct
@@ -54,10 +61,29 @@ func (s *Service) CheckHashConfigurationFile(e *network.ServerIdentity, req *Che
 		reply = true
 		log.Lvl1("The hash sum's are the same")
 	}
-	fmt.Println("CheckHashConfigurationFile salio bien")
-	return &SendCheckHashConfigFileResponse{Success: reply,}, nil
+	return &CheckHashConfigFileResponse{Success: reply,}, nil
 }
 
+//HashConfigurationFile: hashes the configuration file and stores it in the service
+//The hash is stored in s.hash_digest.Value of type HashConfigurationFile
+func (s *Service) HashFinalStatement(e *network.ServerIdentity, req *HashFinalStatement) (network.Body, error) {
+	log.Lvl1("Hash sum value received",req.Sum)
+	fmt.Println("Hash Final Statement")
+	s.FinalHash.Sum = req.Sum
+	return &HashFinalStatementResponse{Answer: s.FinalHash.Sum,}, nil
+}
+
+//CheckHashConfigurationFile: Verifies that the Hash of the configuration file to be signed is correct
+//If it is correct, returns true, else false
+func (s *Service) ChekHashFinalStatement(e *network.ServerIdentity, req *CheckHashFinalStatement) (network.Body, error) {
+	log.Lvl1("Hash sum value received",req.Sum)
+	reply := false
+	if 	bytes.Equal(req.Sum,s.FinalHash.Sum){
+		reply = true
+		log.Lvl1("The hash sum's are the same")
+	}
+	return &CheckHashFinalStatementResponse{Success: reply,}, nil
+}
 
 /*SignatureRequestConfig: starts the collective signature of a file
 Useful for ConfigurationFile
@@ -67,26 +93,20 @@ func (s *Service) SignatureRequestConfig(e *network.ServerIdentity, req *Signatu
 	tree := req.Roster.GenerateBinaryTree() //Generates the tree formed by conode servers
 	tni := s.NewTreeNodeInstance(tree, tree.Root, cosi.Name)
 	pi, err := cosi.NewProtocol(tni) //called from 	"github.com/dedis/cothority/protocols/cosi"
-	fmt.Println("Ya instancio el protocolo")
 	if err != nil{
 		return nil, errors.New("Error in creating CoSi protocol ")
 	}
 	s.RegisterProtocolInstance(pi)
-	fmt.Println("Registra el protocolo")
 	pcosi := pi.(*cosi.CoSi)
 	pcosi.SigningMessage(req.Message)
-	fmt.Println("Signing Message")
 	hash_sum, err := crypto.HashBytes(network.Suite.Hash(), req.Message) //Calculate message hash
-	fmt.Println("Crypto hash")
 	if err != nil {
 		return nil, errors.New("Error hashing the message ")
 	}
 	response := make (chan []byte)
-	fmt.Println("Creating channel")
 	pcosi.RegisterSignatureHook(func(sig []byte) {
 		response <- sig
 	})
-	fmt.Println("Register Signature Hook")
 	log.Lvl3("CoSi Service starting up root protocol")
 	go pi.Dispatch()
 	go pi.Start()
@@ -94,10 +114,41 @@ func (s *Service) SignatureRequestConfig(e *network.ServerIdentity, req *Signatu
 	if log.DebugVisible() > 1 {
 		fmt.Printf("%s: Signed a message.\n")
 	}
-	fmt.Println("Sig is asigned repsonse")
-	fmt.Println("The signature is:")
-	fmt.Println(sig)
+	log.Lvl1(sig)
+	s.ConfigSig.Sum = hash_sum
+	s.ConfigSig.Signature = sig
 	return &SignatureResponseConfig{Sum: hash_sum, Signature: sig,}, nil
+}
+
+/*
+Not sure if this goes here or not
+An organizer sends a finalstatement and wants to verify its authenticity it
+*/
+func (s *Service) VerifyStatement(e *network.ServerIdentity, req *VerificationStatement)(network.Body, error){
+	err := crypto_cosi.VerifySignature(e.Suite(), req.ConodesPublic,req.final_msg, res.Signature)
+	if err != nil{
+		return &VerificationStatementResponse{Success: true,}, nil
+	}else{
+		return &VerificationStatementResponse{Success: false,}, err
+	}
+
+}
+
+/*
+Not sure if this goes here or not
+An organizer sends a finalstatement and wants to verify its authenticity it
+*/
+
+/*To authenticate an attendee we need interaction between the parts:
+*/
+func (s *Service) AuthenticateAttendee(e *network.ServerIdentity, req *VerificationStatement)(network.Body, error){
+	err := crypto_cosi.VerifySignature(e.Suite(), req.ConodesPublic,req.final_msg, res.Signature)
+	if err != nil{
+		return &VerificationStatementResponse{Success: true,}, nil
+	}else{
+		return &VerificationStatementResponse{Success: false,}, err
+	}
+
 }
 
 // NewProtocol is called on all nodes of a Tree (except the root, since it is
@@ -108,7 +159,6 @@ func (s *Service) SignatureRequestConfig(e *network.ServerIdentity, req *Signatu
 // instantiation of the protocol, use CreateProtocolService, and you can
 // give some extra-configuration to your protocol in here.
 func (s *Service) NewProtocol(tn *sda.TreeNodeInstance, conf *sda.GenericConfig) (sda.ProtocolInstance, error) {
-	fmt.Println("Entre a New Protocol")
 	log.Lvl3("Cosi Service received New Protocol event")
 	pi, err := cosi.NewProtocol(tn)
 	go pi.Dispatch()
@@ -123,7 +173,8 @@ func newService(c *sda.Context, path string) sda.Service {
 		ServiceProcessor: sda.NewServiceProcessor(c),
 		path:             path,
 	}
-	if err := s.RegisterMessages(s.HashConfigurationFile,s.CheckHashConfigurationFile, s.SignatureRequestConfig); err != nil {
+	if err := s.RegisterMessages(s.HashConfigurationFile,s.CheckHashConfigurationFile, s.SignatureRequestConfig, 
+		s.HashFinalStatement, s.ChekHashFinalStatement,s.VerifyStatement); err != nil {
 		log.ErrFatal(err, "Couldn't register messages")
 	}
 	return s

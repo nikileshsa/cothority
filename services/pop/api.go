@@ -2,11 +2,12 @@ package pop
 
 import (
 	"errors"
-	"crypto/sha512"
+	_ "crypto/sha512"
 
 	"github.com/dedis/cothority/log"
-	_ "github.com/dedis/cothority/network"
+	"github.com/dedis/cothority/network"
 	"github.com/dedis/cothority/sda"
+	"github.com/dedis/cothority/crypto"
 	_ "github.com/dedis/crypto/abstract"
 	_ "github.com/dedis/crypto/anon"
 
@@ -34,9 +35,10 @@ func (c *Client) SendConfigFileHash(r *sda.Roster, msg_config []byte) ([]byte, e
 		if err != nil {
 			return nil, err
 		}*/
-		hash_config := sha512.New()
-		hash_config.Write(msg_config)
-		hash_config_buff := hash_config.Sum(nil)
+		//hash_config := sha512.New()
+		//hash_config.Write(msg_config)
+		//hash_config_buff := hash_config.Sum(nil)
+		hash_config_buff, err := crypto.HashBytes(network.Suite.Hash(), msg_config)
 		log.Lvl1("Hash sum value ",hash_config_buff)
 		r, err := c.Send(dst, &HashConfigurationFile{
 				Sum: hash_config_buff,
@@ -44,7 +46,7 @@ func (c *Client) SendConfigFileHash(r *sda.Roster, msg_config []byte) ([]byte, e
 		if err != nil {
 			return nil, err
 		}
-		replyVal := r.Msg.(SendHashConfigFileResponse)
+		replyVal := r.Msg.(HashConfigFileResponse)
 		log.Lvl1("The hash value replied is ",replyVal.Answer)
 		return replyVal.Answer, nil
 	}else{
@@ -52,6 +54,36 @@ func (c *Client) SendConfigFileHash(r *sda.Roster, msg_config []byte) ([]byte, e
 	}
 }
 
+//Send the final_statement file of the party, it gets hashed, the output is the hashed value
+//this hashed value is also stored in the server
+//func (c *Client) SendConfigFileHash(r *sda.Roster, data network.Body) ([]byte, error){
+func (c *Client) SendFinalStatementHash(r *sda.Roster, msg_final []byte) ([]byte, error){
+	//Change so that the Number of Organizers might in data
+	dst := r.List[0]
+	//if data != nil {
+	if msg_final != nil {
+	/*	msg_config, err := network.MarshalRegisteredType(data)
+		if err != nil {
+			return nil, err
+		}*/
+		//hash_final := sha512.New()
+		//hash_final.Write(msg_final)
+		//hash_final_buff := hash_final.Sum(nil)
+		//log.Lvl1("Hash sum value ",hash_final_buff)
+		hash_final_buff, err := crypto.HashBytes(network.Suite.Hash(), msg_final)
+		r, err := c.Send(dst, &HashFinalStatement{
+				Sum: hash_final_buff,
+			})
+		if err != nil {
+			return nil, err
+		}
+		replyVal := r.Msg.(HashFinalStatementResponse)
+		log.Lvl1("The hash value replied is ",replyVal.Answer)
+		return replyVal.Answer, nil
+	}else{
+		return nil, errors.New("Empty Configuration File")
+	}
+}
 
 //Start_Signature returns
 /*
@@ -74,9 +106,11 @@ func (c *Client) Start_signature_ConFigFile(r *sda.Roster, msg_config []byte) (*
 			if err != nil {
 				return err
 			}*/
-			hash_config := sha512.New()
-			hash_config.Write(msg_config)
-			hash_config_buff := hash_config.Sum(nil)
+			//hash_config := sha512.New()
+			//hash_config.Write(msg_config)
+			//hash_config_buff := hash_config.Sum(nil)
+			hash_config_buff, err := crypto.HashBytes(network.Suite.Hash(), msg_config)
+
 			//The value to check
 			reply, err := c.Send(dst, &CheckHashConfigurationFile{
 					Sum: hash_config_buff,
@@ -84,7 +118,7 @@ func (c *Client) Start_signature_ConFigFile(r *sda.Roster, msg_config []byte) (*
 			if err != nil {
 				return  nil,err
 			}
-			replyVal := reply.Msg.(SendCheckHashConfigFileResponse)
+			replyVal := reply.Msg.(CheckHashConfigFileResponse)
 			log.Lvl1("Success ",replyVal.Success)
 			if replyVal.Success == false{
 				return  nil,errors.New("Configuration file is incorrect")

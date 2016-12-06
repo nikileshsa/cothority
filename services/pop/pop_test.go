@@ -42,7 +42,7 @@ func setupConfigFile() *ConfigurationFile{
 	}
 }
 
-/*func TestSendConfigFileHash(t *testing.T) {
+func TestSendConfigFileHash(t *testing.T) {
 	local := sda.NewLocalTest()
 	// generate 5 hosts, they don't connect, they process messages, and they
 	// don't register the tree or entitylist
@@ -56,7 +56,7 @@ func setupConfigFile() *ConfigurationFile{
 	hash_value, err := client.SendConfigFileHash(el,config)
 	log.ErrFatal(err, "Problem inside SendConfigFileHash")
 	log.Lvl1("Config File was hashed with ",hash_value)
-}*/
+}
 
 /*
 Tests that the configuration file is signed
@@ -84,4 +84,22 @@ func TestSignConfigFile(t *testing.T){
 	assert.Nil(t, cosi.VerifySignature(hosts[0].Suite(), el.Publics(),
 		config, res_Signature.Signature))
 }
+
+func TestSendFinalStatementHash(t *testing.T) {
+	local := sda.NewLocalTest()
+	// generate 5 hosts, they don't connect, they process messages, and they
+	// don't register the tree or entitylist
+	_, el, _ := local.GenTree(5, true)
+	defer local.CloseAll()
+	//dst := el.RandomServerIdentity() //For now a random server
+	client := NewTestClient(local)
+	//config := setupConfigFile()
+	final_statement := []byte("This would be a set of bytes representing the final_statement file")
+	//Not sure if the configuration file will be a stream of bytes or a 
+	hash_value, err := client.SendFinalStatementHash(el,final_statement)
+	log.ErrFatal(err, "Problem inside SendFinalStatementHash")
+	log.Lvl1("Final Statement was hashed with ",hash_value)
+}
+
+//Not sure if for the final statement is better to append the config-file in the inside, or if the user puts two of them
 
