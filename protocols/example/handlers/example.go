@@ -8,6 +8,7 @@ import (
 	"github.com/dedis/cothority/sda"
 )
 
+
 func init() {
 	network.RegisterPacketType(Announce{})
 	network.RegisterPacketType(Reply{})

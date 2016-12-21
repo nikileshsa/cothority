@@ -81,6 +81,7 @@ func (cs *CoSi) SignatureRequest(si *network.ServerIdentity, req *SignatureReque
 // the one starting the protocol) so it's the Service that will be called to
 // generate the PI on all others node.
 func (cs *CoSi) NewProtocol(tn *sda.TreeNodeInstance, conf *sda.GenericConfig) (sda.ProtocolInstance, error) {
+	fmt.Println("Entre a New Protocol")
 	log.Lvl3("Cosi Service received New Protocol event")
 	pi, err := cosi.NewProtocol(tn)
 	go pi.Dispatch()

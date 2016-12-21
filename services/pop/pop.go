@@ -41,6 +41,7 @@ type Service struct {
 	FinalHash  HashFinalStatement
 	ConfigSig SignatureResponseConfig //Signature of the configuration file
 	AttendeesPublic []abstract.Point //The set of public keys
+	Tags	[300][] bytes //Tags corresponding to each attendee when using a service
 
 }
 
@@ -122,9 +123,10 @@ func (s *Service) SignatureRequestConfig(e *network.ServerIdentity, req *Signatu
 
 /*
 Not sure if this goes here or not
-An organizer sends a finalstatement and wants to verify its authenticity it
+An organizer sends a finalstatement and wants to verify its authenticity
+Needs the signature
 */
-func (s *Service) VerifyStatement(e *network.ServerIdentity, req *VerificationStatement)(network.Body, error){
+func (s *Service) VerifyFinalStatement(e *network.ServerIdentity, req *VerificationStatement)(network.Body, error){
 	err := crypto_cosi.VerifySignature(e.Suite(), req.ConodesPublic,req.final_msg, res.Signature)
 	if err != nil{
 		return &VerificationStatementResponse{Success: true,}, nil
@@ -140,6 +142,8 @@ An organizer sends a finalstatement and wants to verify its authenticity it
 */
 
 /*To authenticate an attendee we need interaction between the parts:
+The user wants to authenticate, I guess that this is done in an API, or should I do a new service
+just for the user
 */
 func (s *Service) AuthenticateAttendee(e *network.ServerIdentity, req *VerificationStatement)(network.Body, error){
 	err := crypto_cosi.VerifySignature(e.Suite(), req.ConodesPublic,req.final_msg, res.Signature)
@@ -174,7 +178,7 @@ func newService(c *sda.Context, path string) sda.Service {
 		path:             path,
 	}
 	if err := s.RegisterMessages(s.HashConfigurationFile,s.CheckHashConfigurationFile, s.SignatureRequestConfig, 
-		s.HashFinalStatement, s.ChekHashFinalStatement,s.VerifyStatement); err != nil {
+		s.HashFinalStatement, s.ChekHashFinalStatement,s.VerifyFinalStatement); err != nil {
 		log.ErrFatal(err, "Couldn't register messages")
 	}
 	return s
