@@ -1,11 +1,9 @@
 package ppsi
 
-
-
 import (
 	"fmt"
-	"github.com/dedis/onet"
 	"github.com/dedis/crypto/ppsi_crypto_utils"
+	"github.com/dedis/onet"
 	"testing"
 )
 
@@ -50,14 +48,15 @@ func TestPPSI(t *testing.T) {
 
 	select {
 	case <-done:
-	if root.Status==0{
-	fmt.Printf("The intersection was sucessfully decvrypted: ")
-		fmt.Printf("%v\n", root.finalIntersection)}
-		if root.Status==1{
-	fmt.Printf("Illegal intersection ")}
+		if root.Status == 0 {
+			fmt.Printf("The intersection was sucessfully decrypted: ")
+			fmt.Printf("%v\n", root.finalIntersection)
+		}
+		if root.Status == 1 {
+			fmt.Printf("Illegal intersection")
+		}
 		//case <-time.After(time.Second * 2):
 		//	t.Fatal("Could not get intersection done in time")
 	}
 
 }
-
