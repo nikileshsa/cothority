@@ -75,7 +75,7 @@ func NewPPSI(node *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	publics := make([]abstract.Point, n)
 
 	var idx int
-
+        numOfThreads  := 1
 	for i, tn := range node.List() {
 		if tn.ServerIdentity.Public.Equal(node.Public()) {
 			idx = i
@@ -86,7 +86,7 @@ func NewPPSI(node *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	numnodes := len(node.List())
 	NumAuthorities := numnodes
 	c := &PPSI{
-		ppsi:             ppsi_crypto_utils.NewPPSI(node.Suite(), node.Private(), publics, NumAuthorities),
+		ppsi:             ppsi_crypto_utils.NewPPSI(node.Suite(), node.Private(), publics, NumAuthorities, numOfThreads),
 		TreeNodeInstance: node,
 
 		publics:   publics,
@@ -145,7 +145,6 @@ func (c *PPSI) Dispatch() error {
 			err = c.handleFullyPhEncryptedMessage(&packet.FullyPhEncryptedMessage)
 		case packet := <-c.initreq:
 			err = c.handleInitiateRequest(&packet.Init)
-
 		case packet := <-c.PartiallyPhDecrypted:
 			err = c.handlePartiallyPhDecryptedMessage(&packet.PartiallyPhDecryptedMessage)
 		case packet := <-c.donreq:
@@ -235,7 +234,7 @@ func (c *PPSI) handleElgEncryptedMessage(in *ElgEncryptedMessage) error {
 	//fmt.Printf("%v\n", phones)
 	if !c.IsLastToDecElg(in.Users[c.Index()]) {
 
-		out := c.ppsi.DecryptElgEncrptPH(phones, c.Index())
+		out := c.ppsi.DecryptElgEncryptPH(phones, c.Index())
 
 		in.Users[c.Index()] = in.Users[c.Index()] + 1
 
