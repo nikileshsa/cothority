@@ -66,8 +66,7 @@ from time to time, as all dedis-dependencies change quite often.
 There are three apps available:
 
 * [cothorityd](https://github.com/dedis/cothority/app/cothorityd) - which is the server-part that you can run to add a node
-* [cosi](https://github.com/dedis/cosi) - the cosi-protocol, service, and app,
-in its own repository
+* [CoSi](https://github.com/dedis/cothority/app/cosi) - the CoSi-app
 * [status](https://github.com/dedis/cothority/app/status) - reads out the status of a cothority
 
 You will find a README.md in each of its directory. To build the apps, you can
@@ -75,16 +74,15 @@ run the following commands:
 
 ```
 go get github.com/dedis/cothority/app/cothorityd
-go get github.com/dedis/cosi
 go get github.com/dedis/cothority/app/status
 ```
 
 # Apps
 
 * [cothorityd](app/cothorityd) - the basic 
-* [cosi](https://github.com/dedis/cosi) - collective signatures
-* [status](app/status) - returns the status of the given group
-* [cisc](app/cisc) - handle your ssh-keys on a blockchain
+* [cosi](cosi) - collective signatures
+* [status](status) - returns the status of the given group
+* [cisc](cisc) - handle your ssh-keys on a blockchain
 * [hotpets](https://github.com/dedis/cothority/tree/hpets16/app/cisc) - hotpets16-branch
 
 # Protocols
@@ -146,14 +144,14 @@ go build
 For more realistic, large scale simulations you can use DeterLab. 
 Find more information on how to use [DeterLab here](Deterlab.md).
 
-# SDA framework
+# onet framework
 
 Core of this repository is a framework for implementing secure, 
 distributed systems. 
 It does so by offering an API for implementing and running different 
 kind of protocols which may rely on other, pre-defined protocols.
  
-Using the SDA-cothority framework, you can:
+Using the onet framework, you can:
 
 * simulate up to 32000 nodes using Deterlab (which is based on 
 [PlanetLab](https://www.planet-lab.org/))
@@ -167,7 +165,6 @@ messages are passed between the hosts.
   
 ## Directory-structure
 
-* [`sda/`](sda/): basic definition of our framework
 * `crypto/`, `log/`, `monitor/`, `network/`: additional libraries for the framework
 * [`simul/`](simul/): simulation-related code
 * [`app/`](app/): all apps in user-space
