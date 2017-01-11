@@ -41,7 +41,7 @@ type Service struct {
 	FinalHash  HashFinalStatement
 	ConfigSig SignatureResponseConfig //Signature of the configuration file
 	AttendeesPublic []abstract.Point //The set of public keys
-	Tags	[300][] bytes //Tags corresponding to each attendee when using a service
+	//Tags	[300][] bytes //Tags corresponding to each attendee when using a service
 
 }
 
