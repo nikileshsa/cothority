@@ -162,7 +162,7 @@ func create_PDF(file_name string, qr_puk string, qr_ek string, qr_prk string) er
 	pdf.Cell(0,10, qr_prk)
 	pdf.Ln(15)
 
-	err := pdf.OutputFileAndClose("contrib_barcode_RegisterQR.pdf")
+	err := pdf.OutputFileAndClose("pseudonym_party_keys.pdf")
 	if (err!=nil){
 		log.Info(err)
 		return err
@@ -192,12 +192,11 @@ func gen_keys(c *cli.Context) error{
 	log.Info(eph_string)
 	log.Info(priv_string)	
 
-	create_QRCode("qrcode_pub.png",pub_string)
-	create_QRCode("qrcode_eph.png",eph_string)
-	create_QRCode("qrcode_priv.png",priv_string)
+	//create_QRCode("qrcode_pub.png",pub_string)
+	//create_QRCode("qrcode_eph.png",eph_string)
+	//create_QRCode("qrcode_priv.png",priv_string)
 	//Create PDF
 	create_PDF("party_keys.pdf",pub_string,eph_string,priv_string)
-	//create_PDF("party_keys.pdf","qrcode_pub.png","/Users/FernandaBorge/EPFL/GO_work/src/github.com/dedis/cothority/app/pop/qrcode_eph.png","qrcode_priv.png")
 
 
 	return nil
