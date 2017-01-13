@@ -1,3 +1,5 @@
+all: test
+
 test_fmt:
 	@echo Checking correct formatting of files
 	@{ \
@@ -15,7 +17,7 @@ test_lint:
 	@echo Checking linting of files
 	@{ \
 		go get -u github.com/golang/lint/golint; \
-		exclude="protocols/byzcoin|_test.go"; \
+		exclude="byzcoin|_test.go"; \
 		lintfiles=$$( golint ./... | egrep -v "($$exclude)" ); \
 		if [ -n "$$lintfiles" ]; then \
 		echo "Lint errors:"; \
@@ -38,8 +40,7 @@ test_verbose:
 
 # use test_verbose instead if you want to use this Makefile locally
 test_go:
-	./coveralls.sh
+	./coveralls.sh ./cosi ./cisc ./byzcoin/*
 
 test: test_fmt test_lint test_go
 
-all: install test
