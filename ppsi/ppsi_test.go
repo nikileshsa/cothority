@@ -44,7 +44,7 @@ func TestPPSI(t *testing.T) {
 	//root.IdsToInterset=IdsToInterset
 	root.EncryptedSets = EncPhones
 	root.RegisterSignatureHook(doneFunc)
-	go root.StartProtocol()
+	go root.Start()
 
 	select {
 	case <-done:
