@@ -2,8 +2,8 @@ package ppsi
 
 import (
 	"fmt"
+	"github.com/dedis/cothority/ppsi/lib"
 	"github.com/dedis/crypto/abstract"
-	"github.com/dedis/crypto/ppsi_crypto_utils"
 	"github.com/dedis/onet"
 )
 
@@ -60,7 +60,7 @@ type PPSI struct {
 
 	treeNodeID onet.TreeNodeID
 
-	ppsi *ppsi_crypto_utils.PPSI
+	ppsi *lib.PPSI
 
 	numnodes      int
 	signatureHook SignatureHook
@@ -75,7 +75,7 @@ func NewPPSI(node *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	publics := make([]abstract.Point, n)
 
 	var idx int
-        numOfThreads  := 1
+	numOfThreads := 1
 	for i, tn := range node.List() {
 		if tn.ServerIdentity.Public.Equal(node.Public()) {
 			idx = i
@@ -86,7 +86,7 @@ func NewPPSI(node *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	numnodes := len(node.List())
 	NumAuthorities := numnodes
 	c := &PPSI{
-		ppsi:             ppsi_crypto_utils.NewPPSI(node.Suite(), node.Private(), publics, NumAuthorities, numOfThreads),
+		ppsi:             lib.NewPPSI(node.Suite(), node.Private(), publics, NumAuthorities, numOfThreads),
 		TreeNodeInstance: node,
 
 		publics:   publics,
@@ -127,7 +127,7 @@ func NewPPSI(node *onet.TreeNodeInstance) (onet.ProtocolInstance, error) {
 	if err = node.RegisterChannel(&c.donreq); err != nil {
 		return nil, err
 	}
-	
+
 	return c, err
 }
 
@@ -459,7 +459,7 @@ func (c *PPSI) computeIntersection(newSet []abstract.Point) {
 			}
 		}
 
-		c.tempIntersection = newTempIntersection 
+		c.tempIntersection = newTempIntersection
 	}
 }
 
