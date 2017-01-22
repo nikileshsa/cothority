@@ -2,7 +2,7 @@ package ppsi
 
 import (
 	"fmt"
-	"github.com/dedis/crypto/ppsi_crypto_utils"
+	"github.com/dedis/cothority/ppsi/lib"
 	"github.com/dedis/onet"
 	"testing"
 )
@@ -21,7 +21,7 @@ func TestPPSI(t *testing.T) {
 	hosts, el, tree := local.GenBigTree(6, 6, 5, true)
 	suite := hosts[0].Suite()
 	publics := el.Publics()
-	ppsi := ppsi_crypto_utils.NewPPSI2(suite, publics, 6)
+	ppsi := lib.NewPPSI2(suite, publics, 6)
 	EncPhones := ppsi.EncryptPhones(setsToEncrypt, 6)
 
 	done := make(chan bool)
